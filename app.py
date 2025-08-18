@@ -15,7 +15,7 @@ app.config['SECRET_KEY'] = 'your-secret-key-here'
 class PredictiveMaintenanceApp:
     def __init__(self):
         self.data_processor = DataProcessor()
-        self.current_index = 100  # Start with first 100 rows
+        self.current_index = 250  # Start with first 100 rows
         self.simulation_active = False
         self.simulation_interval = 5  # seconds
         self.load_models()
@@ -27,7 +27,7 @@ class PredictiveMaintenanceApp:
             self.df = pd.read_csv('data/Cleared_df0.csv')
             # Add timestamp for simulation
             base_time = datetime.now() - timedelta(hours=len(self.df))
-            self.df['timestamp'] = [base_time + timedelta(hours=i) for i in range(len(self.df))]
+            self.df['timestamp'] = [base_time + timedelta(hours=2*i) for i in range(len(self.df))]
             self.total_rows = len(self.df)
             print(f"Loaded {self.total_rows} rows of data")
         except Exception as e:
@@ -108,18 +108,18 @@ class PredictiveMaintenanceApp:
         ]].values.reshape(1, -1)
         
         try:
-            # If models are available, use them
             if 'scaler' in self.models['breakdown']:
                 scaled_features = self.models['breakdown']['scaler'].transform(latest_features)
                 
                 predictions = {}
                 if 'rf' in self.models['breakdown']:
-                    # Assume Random Forest predicts all three fault types
-                    rf_pred = self.models['breakdown']['rf'].predict(scaled_features)
+                    # Assume Random Forest predicts  three fault types
+                    rf_pred = self.models['breakdown']['rf'].predict_proba(scaled_features)
+                    rf_pred = np.array(rf_pred)
                     predictions = {
-                        'faulty_SP': float(rf_pred[0][0]) if rf_pred.shape[1] > 1 else 0.1,
-                        'faulty_TK': float(rf_pred[0][1]) if rf_pred.shape[1] > 1 else 0.1,
-                        'faulty_VP': float(rf_pred[0][2]) if rf_pred.shape[1] > 1 else 0.1
+                        'faulty_SP': float(np.array(rf_pred[0][0][1])) ,
+                        'faulty_TK': float(np.array(rf_pred[1][0][1])) ,
+                        'faulty_VP': float(np.array(rf_pred[2][0][1])) 
                     }
                 return predictions
         except Exception as e:
@@ -127,49 +127,59 @@ class PredictiveMaintenanceApp:
         
         # Fallback to simple heuristic
         return {
-            'faulty_SP': min(0.9, max(0.01, np.random.random() * 0.3)),
-            'faulty_TK': min(0.9, max(0.01, np.random.random() * 0.3)),
-            'faulty_VP': min(0.9, max(0.01, np.random.random() * 0.3))
+            'faulty_SP': 0,
+            'faulty_TK': 0,
+            'faulty_VP': 0
         }
     
-    def calculate_kpis(self):
-        """Calculate KPIs like MTBF, MTTR, etc."""
+    def calculate_kpis(self, equipment=None):
+        """
+        Calculate KPIs for each component or a specific one.
+        If equipment is None or 'all', returns KPIs for all components.
+        """
         current_data = self.get_current_data()
-        
         if current_data.empty:
-            return {
-                'MTBF': 0,
-                'MTTR': 0,
-                'Availability': 0,
-                'Reliability': 0
-            }
-        
-        # Calculate failure events
+            return {}
+
         fault_columns = ['faulty_SP', 'faulty_TK', 'faulty_VP']
-        total_faults = current_data[fault_columns].sum().sum()
-        operating_hours = len(current_data)
-        
-        # MTBF (Mean Time Between Failures) in hours
-        mtbf = operating_hours / max(1, total_faults)
-        
-        # MTTR (Mean Time To Repair) - simplified calculation
-        mttr = 2.0  # Assume 2 hours average repair time
-        
-        # Availability
-        availability = (operating_hours - total_faults * mttr) / operating_hours * 100
-        
-        # Reliability (percentage of time without faults)
-        reliability = ((operating_hours - total_faults) / operating_hours) * 100
-        
-        return {
-            'MTBF': round(mtbf, 2),
-            'MTTR': round(mttr, 2),
-            'Availability': round(max(0, availability), 2),
-            'Reliability': round(max(0, reliability), 2),
-            'Total_Faults': int(total_faults),
-            'Operating_Hours': operating_hours
+        kpi_results = {}
+
+        # Helper to calculate KPIs for a single component
+        def kpi_for_component(fault_col):
+            total_faults = current_data[fault_col].sum()
+            operating_hours = len(current_data)*2
+            mtbf = operating_hours / max(1, total_faults)
+            mttr = 0.25  # Assume 2 hours average repair time
+            availability = (operating_hours - total_faults * mttr) / operating_hours * 100
+            reliability = ((operating_hours - total_faults) / operating_hours) * 100
+            return {
+                'MTBF': round(mtbf, 2),
+                'MTTR': round(mttr, 2),
+                'Availability': round(max(0, availability), 2),
+                'Reliability': round(max(0, reliability), 2),
+                'Total_Faults': int(total_faults),
+                'Operating_Hours': operating_hours
+            }
+
+        # Map equipment value to fault column
+        equipment_map = {
+            'sp': 'faulty_SP',
+            'tk': 'faulty_TK',
+            'vp': 'faulty_VP'
         }
-    
+
+        if equipment is None or equipment == 'all':
+            # Calculate for all components
+            for key, fault_col in equipment_map.items():
+                kpi_results[key] = kpi_for_component(fault_col)
+            return kpi_results
+        else:
+            fault_col = equipment_map.get(equipment.lower())
+            if fault_col:
+                return kpi_for_component(fault_col)
+            else:
+                return {}
+
     def start_simulation(self):
         """Start real-time simulation"""
         if not self.simulation_active:
@@ -259,8 +269,12 @@ def get_breakdown_prediction():
 
 @app.route('/api/kpis')
 def get_kpis():
-    """Get KPI calculations"""
-    kpis = pm_app.calculate_kpis()
+    """
+    Get KPI calculations for a specific equipment or all.
+    Query param: equipment=sp|tk|vp|all (default: all)
+    """
+    equipment = request.args.get('equipment', 'all').lower()
+    kpis = pm_app.calculate_kpis(equipment)
     return jsonify(kpis)
 
 @app.route('/api/simulation/start', methods=["POST"])

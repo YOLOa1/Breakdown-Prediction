@@ -154,7 +154,14 @@ body {
     position: relative;
     overflow: hidden;
 }
-
+.equipement-select {
+    display: flex;
+    align-items: center;
+    position: absolute;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem;
+}
 .kpi-card::before {
     content: '';
     position: absolute;
@@ -589,3 +596,126 @@ body {
 .status-ok { background-color: #4CAF50; }
 .status-warning { background-color: #FF9800; }
 .status-error { background-color: #f44336; }
+/* Main Content - Updated for horizontal sliding */
+.main-content {
+    padding: 0 2rem 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Equipment Status Card - stays at the top */
+.main-content > .card:first-child {
+    margin-bottom: 2rem;
+    flex-shrink: 0;
+}
+
+/* Charts Section - horizontal sliding container */
+.charts-section {
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+}
+
+.charts-section::-webkit-scrollbar {
+    height: 8px;
+}
+
+.charts-section::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+}
+
+.charts-section::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    border-radius: 4px;
+}
+
+.charts-section::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(45deg, #5a6fd8, #6a4190);
+}
+
+/* Individual chart cards in sliding view */
+.charts-section .chart-card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+    flex: 0 0 600px; /* Fixed width for horizontal sliding */
+    height: 500px;
+    transition: transform 0.3s ease;
+}
+
+.charts-section .chart-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Data Table Card - stays at the bottom */
+.main-content > .card:last-child {
+    flex-shrink: 0;
+}
+
+/* Navigation buttons for chart sliding */
+.charts-navigation {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.nav-btn {
+    padding: 0.5rem 1rem;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    border: 1px solid white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.nav-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+}
+
+.nav-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Responsive adjustments for sliding layout */
+@media (max-width: 768px) {
+    .charts-section .chart-card {
+        flex: 0 0 90vw; /* Responsive width for mobile */
+        height: 400px;
+    }
+    
+    .main-content {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .charts-section .chart-card {
+        flex: 0 0 95vw;
+        height: 350px;
+    }
+    
+    .charts-section {
+        gap: 1rem;
+    }
+}

@@ -36,7 +36,17 @@
 
         <!-- KPI Cards -->
         <div class="kpi-section">
+            <div class="equipment-select">
+                            <label for="kpiEquipmentSelect" style="font-size: 0.9em;"></label>
+                            <select id="kpiEquipmentSelect" class="form-select" style="margin-left: 5px;">
+                                <option value="all">All</option>
+                                <option value="sp">Setpoint Control (SP)</option>
+                                <option value="tk">Tank (TK)</option>
+                                <option value="vp">Valve Position (VP)</option>
+                            </select>
+                        </div>
             <div class="kpi-grid">
+                
                 <div class="kpi-card">
                     <div class="kpi-icon">
                         <i class="fas fa-clock"></i>
@@ -105,6 +115,7 @@
             </div>
         </div>
 
+        <!-- Main Content -->
         <!-- Main Content -->
         <div class="main-content">
             <!-- Equipment Status -->
@@ -175,108 +186,118 @@
                         </div>
                     </div>
                 </div>
-            </div>
+    </div>
 
-            <!-- Charts Section -->
-            <div class="charts-grid">
-                <!-- Historical & Predicted Data -->
-                <div class="chart-card">
-                    <div class="card-header">
-                        <h3><i class="fas fa-chart-line"></i> Process Parameters Trend</h3>
-                        <div class="chart-controls">
-                            <select id="parameterSelect" class="form-select">
-                                <option value="310A_FI_4303">Flow Indicator 4303</option>
-                                <option value="310A_DI_3302">Density Indicator 3302</option>
-                                <option value="310A_PI_0580">Pressure Indicator 0580</option>
-                                <option value="310A_PI_0578">Pressure Indicator 0578</option>
-                                <option value="310A_PI_0316">Pressure Indicator 0316</option>
-                                <option value="310A_PI_0325">Pressure Indicator 0325</option>
-                                <option value="310A_FI_4301">Flow Indicator 4301</option>
-                                <option value="310ASP01DI01SPM">Setpoint DI SPM</option>
-                                <option value="310ASP01SI01SPM">Setpoint SI SPM</option>
-                                <option value="310A_TI_5303_D">Temperature Indicator 5303</option>
-                                <option value="310A_TI_5304_D">Temperature Indicator 5304</option>
-                                <option value="310A_PDI_0308">Pressure Differential 0308</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="trendChart"></canvas>
-                    </div>
-                </div>
+    <!-- Navigation buttons for charts -->
+    <div class="charts-navigation">
+        <button id="prevChart" class="nav-btn">
+            <i class="fas fa-chevron-left"></i> Previous
+        </button>
+        <button id="nextChart" class="nav-btn">
+            Next <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
 
-                <!-- Control Chart -->
-                <div class="chart-card">
-                    <div class="card-header">
-                        <h3><i class="fas fa-chart-area"></i> Statistical Process Control</h3>
-                        <div class="chart-controls">
-                            <select id="controlParameterSelect" class="form-select">
-                                <option value="310A_FI_4303">Flow Indicator 4303</option>
-                                <option value="310A_DI_3302">Density Indicator 3302</option>
-                                <option value="310A_PI_0316">Pressure Indicator 0316</option>
-                                <option value="310A_PI_0325">Pressure Indicator 0325</option>
-                                <option value="310A_TI_5303_D">Temperature Indicator 5303</option>
-                                <option value="310A_TI_5304_D">Temperature Indicator 5304</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="controlChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Breakdown Prediction -->
-                <div class="chart-card">
-                    <div class="card-header">
-                        <h3><i class="fas fa-exclamation-triangle"></i> Fault Prediction</h3>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="breakdownChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Equipment Comparison -->
-                <div class="chart-card">
-                    <div class="card-header">
-                        <h3><i class="fas fa-balance-scale"></i> Multi-Parameter Overview</h3>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="multiParameterChart"></canvas>
-                    </div>
+    <!-- Charts Section - Now with horizontal sliding -->
+    <div class="charts-section" id="chartsSection">
+        <!-- Historical & Predicted Data -->
+        <div class="chart-card">
+            <div class="card-header">
+                <h3><i class="fas fa-chart-line"></i> Process Parameters Trend</h3>
+                <div class="chart-controls">
+                    <select id="parameterSelect" class="form-select">
+                        <option value="310A_FI_4303">Flow Indicator 4303</option>
+                        <option value="310A_DI_3302">Density Indicator 3302</option>
+                        <option value="310A_PI_0580">Pressure Indicator 0580</option>
+                        <option value="310A_PI_0578">Pressure Indicator 0578</option>
+                        <option value="310A_PI_0316">Pressure Indicator 0316</option>
+                        <option value="310A_PI_0325">Pressure Indicator 0325</option>
+                        <option value="310A_FI_4301">Flow Indicator 4301</option>
+                        <option value="310ASP01DI01SPM">Setpoint DI SPM</option>
+                        <option value="310ASP01SI01SPM">Setpoint SI SPM</option>
+                        <option value="310A_TI_5303_D">Temperature Indicator 5303</option>
+                        <option value="310A_TI_5304_D">Temperature Indicator 5304</option>
+                        <option value="310A_PDI_0308">Pressure Differential 0308</option>
+                    </select>
                 </div>
             </div>
+            <div class="chart-container">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
 
-            <!-- Data Table -->
-            <div class="card">
-                <div class="card-header">
-                    <h3><i class="fas fa-table"></i> Recent Data Points</h3>
-                    <div class="table-controls">
-                        <button id="refreshData" class="btn btn-primary">
-                            <i class="fas fa-sync-alt"></i> Refresh
-                        </button>
-                    </div>
-                </div>
-                <div class="table-container">
-                    <table id="dataTable" class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Timestamp</th>
-                                <th>FI_4303</th>
-                                <th>DI_3302</th>
-                                <th>PI_0316</th>
-                                <th>TI_5303</th>
-                                <th>TI_5304</th>
-                                <th>SP Fault</th>
-                                <th>TK Fault</th>
-                                <th>VP Fault</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dataTableBody">
-                            <!-- Data will be populated by JavaScript -->
-                        </tbody>
-                    </table>
+        <!-- Control Chart -->
+        <div class="chart-card">
+            <div class="card-header">
+                <h3><i class="fas fa-chart-area"></i> Statistical Process Control</h3>
+                <div class="chart-controls">
+                    <select id="controlParameterSelect" class="form-select">
+                        <option value="310A_FI_4303">Flow Indicator 4303</option>
+                        <option value="310A_DI_3302">Density Indicator 3302</option>
+                        <option value="310A_PI_0316">Pressure Indicator 0316</option>
+                        <option value="310A_PI_0325">Pressure Indicator 0325</option>
+                        <option value="310A_TI_5303_D">Temperature Indicator 5303</option>
+                        <option value="310A_TI_5304_D">Temperature Indicator 5304</option>
+                    </select>
                 </div>
             </div>
+            <div class="chart-container">
+                <canvas id="controlChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Breakdown Prediction -->
+        <div class="chart-card">
+            <div class="card-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> Fault Prediction</h3>
+            </div>
+            <div class="chart-container">
+                <canvas id="breakdownChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Equipment Comparison -->
+        <div class="chart-card">
+            <div class="card-header">
+                <h3><i class="fas fa-balance-scale"></i> Multi-Parameter Overview</h3>
+            </div>
+            <div class="chart-container">
+                <canvas id="multiParameterChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-table"></i> Recent Data Points</h3>
+            <div class="table-controls">
+                <button id="refreshData" class="btn btn-primary">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+        <div class="table-container">
+            <table id="dataTable" class="data-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>FI_4303</th>
+                        <th>DI_3302</th>
+                        <th>PI_0316</th>
+                        <th>TI_5303</th>
+                        <th>TI_5304</th>
+                        <th>SP Fault</th>
+                        <th>TK Fault</th>
+                        <th>VP Fault</th>
+                    </tr>
+                </thead>
+                <tbody id="dataTableBody">
+                    <!-- Data will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
         </div>
     </div>
 

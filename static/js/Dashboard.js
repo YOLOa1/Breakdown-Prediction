@@ -1,3 +1,145 @@
+// Chart navigation functionality
+class ChartNavigation {
+    constructor() {
+        this.chartsSection = document.getElementById('chartsSection');
+        this.prevBtn = document.getElementById('prevChart');
+        this.nextBtn = document.getElementById('nextChart');
+        this.currentIndex = 0;
+        this.cardWidth = 600; // Fixed width of each card + gap
+        this.totalCards = 4; // Number of chart cards
+        
+        this.init();
+    }
+    
+    init() {
+        if (this.prevBtn && this.nextBtn && this.chartsSection) {
+            this.prevBtn.addEventListener('click', () => this.slidePrev());
+            this.nextBtn.addEventListener('click', () => this.slideNext());
+            
+            // Initialize button states
+            this.updateButtonStates();
+            
+            // Handle responsive card width
+            this.updateCardWidth();
+            window.addEventListener('resize', () => this.updateCardWidth());
+            
+            // Handle scroll events for button states
+            this.chartsSection.addEventListener('scroll', () => {
+                this.updateCurrentIndex();
+                this.updateButtonStates();
+            });
+        }
+    }
+    
+    updateCardWidth() {
+        const card = this.chartsSection.querySelector('.chart-card');
+        if (card) {
+            const cardRect = card.getBoundingClientRect();
+            const gap = parseInt(getComputedStyle(this.chartsSection).gap) || 32;
+            this.cardWidth = cardRect.width + gap;
+        }
+    }
+    
+    updateCurrentIndex() {
+        const scrollLeft = this.chartsSection.scrollLeft;
+        this.currentIndex = Math.round(scrollLeft / this.cardWidth);
+    }
+    
+    slidePrev() {
+        if (this.currentIndex > 0) {
+            this.currentIndex--;
+            this.scrollToIndex(this.currentIndex);
+        }
+    }
+    
+    slideNext() {
+        if (this.currentIndex < this.totalCards - 1) {
+            this.currentIndex++;
+            this.scrollToIndex(this.currentIndex);
+        }
+    }
+    
+    scrollToIndex(index) {
+        const scrollLeft = index * this.cardWidth;
+        this.chartsSection.scrollTo({
+            left: scrollLeft,
+            behavior: 'smooth'
+        });
+        
+        // Update button states after animation
+        setTimeout(() => {
+            this.updateButtonStates();
+        }, 300);
+    }
+    
+    updateButtonStates() {
+        if (this.prevBtn && this.nextBtn) {
+            this.prevBtn.disabled = this.currentIndex <= 0;
+            this.nextBtn.disabled = this.currentIndex >= this.totalCards - 1;
+        }
+    }
+    
+    // Method to programmatically navigate to specific chart
+    goToChart(index) {
+        if (index >= 0 && index < this.totalCards) {
+            this.currentIndex = index;
+            this.scrollToIndex(this.currentIndex);
+        }
+    }
+}
+
+// Initialize chart navigation when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    const chartNav = new ChartNavigation();
+    
+    // Make chartNav globally accessible if needed
+    window.chartNavigation = chartNav;
+});
+
+// Optional: Keyboard navigation
+document.addEventListener('keydown', function(e) {
+    if (window.chartNavigation) {
+        if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            window.chartNavigation.slidePrev();
+        } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            window.chartNavigation.slideNext();
+        }
+    }
+});
+
+// Optional: Touch/swipe support for mobile
+let startX = 0;
+let startY = 0;
+
+document.addEventListener('touchstart', function(e) {
+    if (e.target.closest('.charts-section')) {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+    }
+});
+
+document.addEventListener('touchend', function(e) {
+    if (e.target.closest('.charts-section') && window.chartNavigation) {
+        const endX = e.changedTouches[0].clientX;
+        const endY = e.changedTouches[0].clientY;
+        
+        const deltaX = startX - endX;
+        const deltaY = startY - endY;
+        
+        // Only trigger if horizontal swipe is more significant than vertical
+        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+            if (deltaX > 0) {
+                // Swipe left - go to next
+                window.chartNavigation.slideNext();
+            } else {
+                // Swipe right - go to previous
+                window.chartNavigation.slidePrev();
+            }
+        }
+    }
+});
 class PredictiveMaintenanceDashboard {
     constructor() {
         this.charts = {};
@@ -161,27 +303,21 @@ class PredictiveMaintenanceDashboard {
         // Breakdown Prediction Chart
         const breakdownCtx = document.getElementById('breakdownChart').getContext('2d');
         this.charts.breakdown = new Chart(breakdownCtx, {
-            type: 'doughnut',
+            type: 'bar',
             data: {
                 labels: ['SP Fault Risk (%)', 'TK Fault Risk (%)', 'VP Fault Risk (%)'],
                 datasets: [{
                     data: [0, 0, 0],
-                    backgroundColor: [
-                        '#f44336',
-                        '#FF9800',
-                        '#FF5722'
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#fff'
+                    backgroundColor: ['#f44336', '#FF9800', '#FF5722'],
+                    borderWidth: 1,
+                    borderColor: '#000'
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        position: 'bottom'
-                    },
+                    legend: { display: false },
                     title: {
                         display: true,
                         text: 'Equipment Fault Risk Assessment'
@@ -189,13 +325,24 @@ class PredictiveMaintenanceDashboard {
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                return context.label + ': ' + context.parsed.toFixed(1) + '%';
+                                return context.label + ': ' + context.parsed.y + '%';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
                             }
                         }
                     }
                 }
             }
         });
+
 
         // Multi-Parameter Chart
         const multiCtx = document.getElementById('multiParameterChart').getContext('2d');
@@ -275,6 +422,14 @@ class PredictiveMaintenanceDashboard {
         if (controlParamSelect) {
             controlParamSelect.addEventListener('change', (e) => {
                 this.updateControlChart(e.target.value);
+            });
+        }
+
+        // Equipment KPI selection
+        const equipmentSelect = document.getElementById('kpiEquipmentSelect');
+        if (equipmentSelect) {
+            equipmentSelect.addEventListener('change', () => {
+                this.updateKPIs();
             });
         }
     }
@@ -420,7 +575,15 @@ class PredictiveMaintenanceDashboard {
 
     async updateKPIs() {
         try {
-            const response = await fetch('/api/kpis');
+            // Get selected equipment from dropdown
+            const equipmentSelect = document.getElementById('kpiEquipmentSelect');
+            let equipment = 'all';
+            if (equipmentSelect) {
+                equipment = equipmentSelect.value;
+            }
+
+            // Fetch KPIs for selected equipment
+            const response = await fetch(`/api/kpis?equipment=${equipment}`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -499,7 +662,7 @@ class PredictiveMaintenanceDashboard {
             }
             
             const predictions = await response.json();
-
+            console.log(predictions)
             // Update breakdown chart
             this.charts.breakdown.data.datasets[0].data = [
                 (predictions.faulty_SP || 0) * 100,
@@ -586,8 +749,6 @@ class PredictiveMaintenanceDashboard {
         const predictedTimestamps = predictions.timestamps || [];
 
         const maxPoints = 50;
-        console.log(historicalData)
-        console.log(predictedData)
         // Keep historical data capped at maxPoints
         let limitedHistoricalData = historicalData.slice(-maxPoints);
         let limitedHistoricalTimestamps = historicalTimestamps.slice(-maxPoints);
